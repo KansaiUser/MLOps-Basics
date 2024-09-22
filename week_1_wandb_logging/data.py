@@ -11,7 +11,7 @@ class DataModule(pl.LightningDataModule):
         super().__init__()
 
         self.batch_size = batch_size
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, clean_up_tokenization_spaces=True)
 
     def prepare_data(self):
         cola_dataset = load_dataset("glue", "cola")
