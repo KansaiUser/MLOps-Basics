@@ -29,6 +29,9 @@ class ColaModel(pl.LightningModule):
         self.precision_micro_metric = torchmetrics.Precision(task="binary", average="micro")
         self.recall_micro_metric = torchmetrics.Recall(task="binary", average="micro")
 
+        # New: For storing validation step outputs
+        self.validation_step_outputs = []
+
     def forward(self, input_ids, attention_mask, labels=None):
         outputs = self.bert(
             input_ids=input_ids, attention_mask=attention_mask, labels=labels
@@ -53,6 +56,12 @@ class ColaModel(pl.LightningModule):
         )
         preds = torch.argmax(outputs.logits, 1)
 
+        # Collect outputs for later use in on_validation_epoch_end
+        self.validation_step_outputs.append({
+            "labels": labels,
+            "logits": outputs.logits
+        })
+
         # Metrics
         valid_acc = self.val_accuracy_metric(preds, labels)
         precision_macro = self.precision_macro_metric(preds, labels)
@@ -71,17 +80,24 @@ class ColaModel(pl.LightningModule):
         self.log("valid/f1", f1, prog_bar=True, on_epoch=True)
         return {"labels": labels, "logits": outputs.logits}
 
-    def validation_epoch_end(self, outputs):
-        labels = torch.cat([x["labels"] for x in outputs])
-        logits = torch.cat([x["logits"] for x in outputs])
+    # def validation_epoch_end(self, outputs):
+    def on_train_epoch_end(self):
+        # Gather the outputs stored in validation_step
+        labels = torch.cat([x["labels"] for x in self.validation_step_outputs])
+        logits = torch.cat([x["logits"] for x in self.validation_step_outputs])
+        # labels = torch.cat([x["labels"] for x in outputs])
+        # logits = torch.cat([x["logits"] for x in outputs])
         preds = torch.argmax(logits, 1)
+
+        # Clear outputs for the next epoch
+        self.validation_step_outputs.clear()
 
         ## There are multiple ways to track the metrics
         # 1. Confusion matrix plotting using inbuilt W&B method
         self.logger.experiment.log(
             {
                 "conf": wandb.plot.confusion_matrix(
-                    probs=logits.numpy(), y_true=labels.numpy()
+                    probs=logits.cpu().numpy(), y_true=labels.cpu().numpy()
                 )
             }
         )

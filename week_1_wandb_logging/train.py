@@ -18,15 +18,35 @@ class SamplesVisualisationLogger(pl.Callback):
 
     def on_validation_end(self, trainer, pl_module):
         val_batch = next(iter(self.datamodule.val_dataloader()))
+        # Move tensors to the correct device (same as the model)
+        # val_batch = {k: v.to(pl_module.device) for k, v in val_batch.items()}
+
+
+        # Move only the tensors to the correct device (ignore the 'sentence' field)
+        input_ids = val_batch["input_ids"].to(pl_module.device)
+        attention_mask = val_batch["attention_mask"].to(pl_module.device)
+        labels = val_batch["label"].to(pl_module.device)
+
         sentences = val_batch["sentence"]
 
-        outputs = pl_module(val_batch["input_ids"], val_batch["attention_mask"])
-        preds = torch.argmax(outputs.logits, 1)
-        labels = val_batch["label"]
+        # outputs = pl_module(val_batch["input_ids"], val_batch["attention_mask"])
+        outputs = pl_module(input_ids, attention_mask)
 
+        preds = torch.argmax(outputs.logits, 1)
+        # labels = val_batch["label"]
+
+        # df = pd.DataFrame(
+        #     {"Sentence": sentences, "Label": labels.numpy(), "Predicted": preds.numpy()}
+        # )
+        # Convert to CPU for logging
         df = pd.DataFrame(
-            {"Sentence": sentences, "Label": labels.numpy(), "Predicted": preds.numpy()}
+            {
+                "Sentence": sentences,
+                "Label": labels.cpu().numpy(),
+                "Predicted": preds.cpu().numpy(),
+            }
         )
+
 
         wrong_df = df[df["Label"] != df["Predicted"]]
         trainer.logger.experiment.log(
@@ -52,7 +72,7 @@ def main():
         monitor="valid/loss", patience=3, verbose=True, mode="min"
     )
 
-    wandb_logger = WandbLogger(project="MLOps Basics", entity="raviraja")
+    wandb_logger = WandbLogger(project="MLOps Basics")
     trainer = pl.Trainer(
         max_epochs=1,
         logger=wandb_logger,
