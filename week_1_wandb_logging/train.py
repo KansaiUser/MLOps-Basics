@@ -18,9 +18,6 @@ class SamplesVisualisationLogger(pl.Callback):
 
     def on_validation_end(self, trainer, pl_module):
         val_batch = next(iter(self.datamodule.val_dataloader()))
-        # Move tensors to the correct device (same as the model)
-        # val_batch = {k: v.to(pl_module.device) for k, v in val_batch.items()}
-
 
         # Move only the tensors to the correct device (ignore the 'sentence' field)
         input_ids = val_batch["input_ids"].to(pl_module.device)
@@ -29,15 +26,11 @@ class SamplesVisualisationLogger(pl.Callback):
 
         sentences = val_batch["sentence"]
 
-        # outputs = pl_module(val_batch["input_ids"], val_batch["attention_mask"])
         outputs = pl_module(input_ids, attention_mask)
 
         preds = torch.argmax(outputs.logits, 1)
         # labels = val_batch["label"]
 
-        # df = pd.DataFrame(
-        #     {"Sentence": sentences, "Label": labels.numpy(), "Predicted": preds.numpy()}
-        # )
         # Convert to CPU for logging
         df = pd.DataFrame(
             {
