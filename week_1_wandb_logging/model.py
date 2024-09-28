@@ -94,16 +94,16 @@ class ColaModel(pl.LightningModule):
 
         ## There are multiple ways to track the metrics
         # 1. Confusion matrix plotting using inbuilt W&B method
-        self.logger.experiment.log(
-            {
-                "conf": wandb.plot.confusion_matrix(
-                    probs=logits.cpu().numpy(), y_true=labels.cpu().numpy()
-                )
-            }
-        )
+        # self.logger.experiment.log(
+        #     {
+        #         "conf": wandb.plot.confusion_matrix(
+        #             probs=logits.cpu().numpy(), y_true=labels.cpu().numpy()
+        #         )
+        #     }
+        # )
 
         # 2. Confusion Matrix plotting using scikit-learn method
-        # wandb.log({"cm": wandb.sklearn.plot_confusion_matrix(labels.numpy(), preds)})
+        wandb.log({"cm": wandb.sklearn.plot_confusion_matrix(labels.cpu().numpy(), preds.cpu().numpy())})
 
         # 3. Confusion Matric plotting using Seaborn
         # data = confusion_matrix(labels.numpy(), preds.numpy())
