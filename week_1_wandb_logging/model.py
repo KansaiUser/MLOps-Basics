@@ -94,31 +94,31 @@ class ColaModel(pl.LightningModule):
 
         ## There are multiple ways to track the metrics
         # 1. Confusion matrix plotting using inbuilt W&B method
-        # self.logger.experiment.log(
-        #     {
-        #         "conf": wandb.plot.confusion_matrix(
-        #             probs=logits.cpu().numpy(), y_true=labels.cpu().numpy()
-        #         )
-        #     }
-        # )
+        self.logger.experiment.log(
+            {
+                "conf": wandb.plot.confusion_matrix(
+                    probs=logits.cpu().numpy(), y_true=labels.cpu().numpy()
+                )
+            }
+        )
 
         # 2. Confusion Matrix plotting using scikit-learn method
         # wandb.log({"cm": wandb.sklearn.plot_confusion_matrix(labels.cpu().numpy(), preds.cpu().numpy())})
 
         # 3. Confusion Matric plotting using Seaborn
-        data = confusion_matrix(labels.cpu().numpy(), preds.cpu().numpy())
-        df_cm = pd.DataFrame(data, columns=np.unique(labels.cpu()), index=np.unique(labels.cpu()))
-        df_cm.index.name = "Actual"
-        df_cm.columns.name = "Predicted"
-        plt.figure(figsize=(7, 4))
-        plot = sns.heatmap(
-            df_cm, cmap="Blues", annot=True, annot_kws={"size": 16}
-        )  # font size
-        self.logger.experiment.log({"Confusion Matrix": wandb.Image(plot)})
+        # data = confusion_matrix(labels.cpu().numpy(), preds.cpu().numpy())
+        # df_cm = pd.DataFrame(data, columns=np.unique(labels.cpu()), index=np.unique(labels.cpu()))
+        # df_cm.index.name = "Actual"
+        # df_cm.columns.name = "Predicted"
+        # plt.figure(figsize=(7, 4))
+        # plot = sns.heatmap(
+        #     df_cm, cmap="Blues", annot=True, annot_kws={"size": 16}
+        # )  # font size
+        # self.logger.experiment.log({"Confusion Matrix": wandb.Image(plot)})
 
-        self.logger.experiment.log(
-            {"roc": wandb.plot.roc_curve(labels.cpu().numpy(), logits.cpu().numpy())}
-        )
+        # self.logger.experiment.log(
+        #     {"roc": wandb.plot.roc_curve(labels.cpu().numpy(), logits.cpu().numpy())}
+        # )
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.hparams["lr"])
