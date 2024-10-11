@@ -29,7 +29,12 @@ class ColaPredictor:
         # The logits are directly accesible
         logits = self.model(input_ids, attention_mask).logits  # Get logits directly
         scores = self.softmax(logits).tolist()[0]  # Apply softmax to logits for each class
-
+        # In our case this works same as the other script since
+        # self.softmax(logits) is tensor([[0.3200, 0.6800]], device='cuda:0')
+        # so converting it to list [[0.3200046420097351, 0.6799952983856201]] and 
+        # taking the first element [0.3200046420097351, 0.6799952983856201] is the same as
+        # taking the first element tensor([0.3200, 0.6800], device='cuda:0') and 
+        # passing it to list [0.3200046420097351, 0.6799952983856201]
         # Prepare predictions with labels
         predictions = [{"label": label, "score": score} for label, score in zip(self.labels, scores)]
         return predictions

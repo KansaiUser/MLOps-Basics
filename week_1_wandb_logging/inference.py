@@ -10,7 +10,7 @@ class ColaPredictor:
         self.model.eval()
         self.model.freeze()
         self.processor = DataModule()
-        self.softmax = torch.nn.Softmax(dim=0)
+        self.softmax = torch.nn.Softmax(dim=1) #not0
         self.lables = ["unacceptable", "acceptable"]
 
          # Get the device the model is on
@@ -29,7 +29,7 @@ class ColaPredictor:
         # Move input tensors to the same device as the model
         input_ids = torch.tensor([processed["input_ids"]]).to(self.device)
         attention_mask = torch.tensor([processed["attention_mask"]]).to(self.device)
- 
+
         # Pass tensors to the model
         logits = self.model(input_ids, attention_mask)
         scores = self.softmax(logits[0]).tolist()[0]

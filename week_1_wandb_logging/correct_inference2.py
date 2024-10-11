@@ -35,7 +35,12 @@ class ColaPredictor:
         # Apply softmax to get probabilities
         probabilities = self.softmax(logits)  # Shape: [1, num_labels]
         scores = probabilities[0].tolist()    # Convert to list
-
+        # In our case this works same as the other script since
+        # self.softmax(logits) is tensor([[0.3200, 0.6800]], device='cuda:0')
+        # so converting it to list [[0.3200046420097351, 0.6799952983856201]] and 
+        # taking the first element [0.3200046420097351, 0.6799952983856201] is the same as
+        # taking the first element tensor([0.3200, 0.6800], device='cuda:0') and 
+        # passing it to list [0.3200046420097351, 0.6799952983856201]
         # Prepare the predictions
         predictions = []
         for score, label in zip(scores, self.labels):
