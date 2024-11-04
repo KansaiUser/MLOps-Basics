@@ -41,5 +41,8 @@ class ColaPredictor:
 
 if __name__ == "__main__":
     sentence = "The boy is sitting on a bench"
-    predictor = ColaPredictor("./models/best-checkpoint.ckpt")
+    # Since Hydra output the model in another directory we have to modify
+    predictor = ColaPredictor("./outputs/2024-11-04/20-08-51/models/best-checkpoint.ckpt")
+    # predictor = ColaPredictor("./models/best-checkpoint.ckpt")
+
     print(predictor.predict(sentence))

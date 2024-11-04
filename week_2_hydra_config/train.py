@@ -66,12 +66,28 @@ def main(cfg):
     )
     cola_model = ColaModel(cfg.model.name)
 
+    # By adding Hydra the scripts's working directory is automatically modified to include a timestamped
+    # output directory for each run. . By default, Hydra organizes output files under ./outputs/{date}/{time}/
+
     checkpoint_callback = ModelCheckpoint(
         dirpath="./models",
         filename="best-checkpoint",
         monitor="valid/loss",
         mode="min",
     )
+
+    # If we dont want that behavior we would have to do 
+    # Get the current directory of the script and append "models"
+    # import os
+    # current_dir = os.path.dirname(os.path.abspath(__file__))
+    # model_dir = os.path.join(current_dir, "models")
+
+    # checkpoint_callback = ModelCheckpoint(
+    #     dirpath=model_dir,  # Absolute path to models directory
+    #     filename="best-checkpoint",
+    #     monitor="valid/loss",
+    #     mode="min",
+    # )
 
     early_stopping_callback = EarlyStopping(
         monitor="valid/loss", patience=3, verbose=True, mode="min"
