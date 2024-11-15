@@ -10,12 +10,19 @@ from data import DataModule
 logger = logging.getLogger(__name__)
 
 
-@hydra.main(config_path="./configs", config_name="config")
+@hydra.main(config_path="./configs", config_name="config",version_base=None)
 def convert_model(cfg):
     root_dir = hydra.utils.get_original_cwd()
     model_path = f"{root_dir}/models/best-checkpoint.ckpt"
     logger.info(f"Loading pre-trained model from: {model_path}")
     cola_model = ColaModel.load_from_checkpoint(model_path)
+
+    # Set the device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logger.info(f"Using device: {device}")
+    cola_model.to(device)
+    cola_model.eval()
+
 
     data_model = DataModule(
         cfg.model.tokenizer, cfg.processing.batch_size, cfg.processing.max_length
@@ -24,8 +31,8 @@ def convert_model(cfg):
     data_model.setup()
     input_batch = next(iter(data_model.train_dataloader()))
     input_sample = {
-        "input_ids": input_batch["input_ids"][0].unsqueeze(0),
-        "attention_mask": input_batch["attention_mask"][0].unsqueeze(0),
+        "input_ids": input_batch["input_ids"][0].unsqueeze(0).to(device),
+        "attention_mask": input_batch["attention_mask"][0].unsqueeze(0).to(device),
     }
 
     # Export the model
