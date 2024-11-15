@@ -66,6 +66,15 @@ python inference.py
 python inference_onnx.py
 ```
 
+### FastAPI
+
+Run it with 
+
+```Shell
+uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+```
+
+
 ### Docker
 
 Install the docker using the [instructions here](https://docs.docker.com/engine/install/)
