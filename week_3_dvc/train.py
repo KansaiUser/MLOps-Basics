@@ -24,15 +24,28 @@ class SamplesVisualisationLogger(pl.Callback):
 
     def on_validation_end(self, trainer, pl_module):
         val_batch = next(iter(self.datamodule.val_dataloader()))
+
+        # Move only the tensors to the correct device (ignore the 'sentence' field)
+        input_ids = val_batch["input_ids"].to(pl_module.device)
+        attention_mask = val_batch["attention_mask"].to(pl_module.device)
+        labels = val_batch["label"].to(pl_module.device)
+
         sentences = val_batch["sentence"]
 
-        outputs = pl_module(val_batch["input_ids"], val_batch["attention_mask"])
-        preds = torch.argmax(outputs.logits, 1)
-        labels = val_batch["label"]
+        outputs = pl_module(input_ids, attention_mask)
 
+        preds = torch.argmax(outputs.logits, 1)
+        # labels = val_batch["label"]
+
+        # Convert to CPU for logging
         df = pd.DataFrame(
-            {"Sentence": sentences, "Label": labels.numpy(), "Predicted": preds.numpy()}
+            {
+                "Sentence": sentences,
+                "Label": labels.cpu().numpy(),
+                "Predicted": preds.cpu().numpy(),
+            }
         )
+
 
         wrong_df = df[df["Label"] != df["Predicted"]]
         trainer.logger.experiment.log(
@@ -53,7 +66,10 @@ def main(cfg):
     )
     cola_model = ColaModel(cfg.model.name)
 
-    root_dir = hydra.utils.get_original_cwd()
+    # By adding Hydra the scripts's working directory is automatically modified to include a timestamped
+    # output directory for each run. . By default, Hydra organizes output files under ./outputs/{date}/{time}/
+
+    root_dir = hydra.utils.get_original_cwd() 
     checkpoint_callback = ModelCheckpoint(
         dirpath=f"{root_dir}/models",
         filename="best-checkpoint",
@@ -61,11 +77,24 @@ def main(cfg):
         mode="min",
     )
 
+    # If we dont want that behavior we would have to do 
+    # Get the current directory of the script and append "models"
+    # import os
+    # current_dir = os.path.dirname(os.path.abspath(__file__))
+    # model_dir = os.path.join(current_dir, "models")
+
+    # checkpoint_callback = ModelCheckpoint(
+    #     dirpath=model_dir,  # Absolute path to models directory
+    #     filename="best-checkpoint",
+    #     monitor="valid/loss",
+    #     mode="min",
+    # )
+
     early_stopping_callback = EarlyStopping(
         monitor="valid/loss", patience=3, verbose=True, mode="min"
     )
 
-    wandb_logger = WandbLogger(project="MLOps Basics", entity="raviraja")
+    wandb_logger = WandbLogger(project="MLOps Basics")
     trainer = pl.Trainer(
         max_epochs=cfg.training.max_epochs,
         logger=wandb_logger,

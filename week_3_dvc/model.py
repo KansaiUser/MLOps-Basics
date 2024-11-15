@@ -21,17 +21,18 @@ class ColaModel(pl.LightningModule):
             model_name, num_labels=2
         )
         self.num_classes = 2
-        self.train_accuracy_metric = torchmetrics.Accuracy()
-        self.val_accuracy_metric = torchmetrics.Accuracy()
-        self.f1_metric = torchmetrics.F1(num_classes=self.num_classes)
-        self.precision_macro_metric = torchmetrics.Precision(
-            average="macro", num_classes=self.num_classes
-        )
-        self.recall_macro_metric = torchmetrics.Recall(
-            average="macro", num_classes=self.num_classes
-        )
-        self.precision_micro_metric = torchmetrics.Precision(average="micro")
-        self.recall_micro_metric = torchmetrics.Recall(average="micro")
+   
+        # Update torchmetrics with the 'task' argument
+        self.train_accuracy_metric = torchmetrics.Accuracy(task="binary")
+        self.val_accuracy_metric = torchmetrics.Accuracy(task="binary")
+        self.f1_metric = torchmetrics.F1Score(task="binary")
+        self.precision_macro_metric = torchmetrics.Precision(task="binary", average="macro")
+        self.recall_macro_metric = torchmetrics.Recall(task="binary", average="macro")
+        self.precision_micro_metric = torchmetrics.Precision(task="binary", average="micro")
+        self.recall_micro_metric = torchmetrics.Recall(task="binary", average="micro")
+
+        # New: For storing validation step outputs
+        self.validation_step_outputs = []
 
     def forward(self, input_ids, attention_mask, labels=None):
         outputs = self.bert(
@@ -57,6 +58,12 @@ class ColaModel(pl.LightningModule):
         )
         preds = torch.argmax(outputs.logits, 1)
 
+        # Collect outputs for later use in on_validation_epoch_end
+        self.validation_step_outputs.append({
+            "labels": labels,
+            "logits": outputs.logits
+        })
+
         # Metrics
         valid_acc = self.val_accuracy_metric(preds, labels)
         precision_macro = self.precision_macro_metric(preds, labels)
@@ -75,38 +82,45 @@ class ColaModel(pl.LightningModule):
         self.log("valid/f1", f1, prog_bar=True, on_epoch=True)
         return {"labels": labels, "logits": outputs.logits}
 
-    def validation_epoch_end(self, outputs):
-        labels = torch.cat([x["labels"] for x in outputs])
-        logits = torch.cat([x["logits"] for x in outputs])
+    # def validation_epoch_end(self, outputs):
+    def on_train_epoch_end(self):
+        # Gather the outputs stored in validation_step
+        labels = torch.cat([x["labels"] for x in self.validation_step_outputs])
+        logits = torch.cat([x["logits"] for x in self.validation_step_outputs])
+        # labels = torch.cat([x["labels"] for x in outputs])
+        # logits = torch.cat([x["logits"] for x in outputs])
         preds = torch.argmax(logits, 1)
+
+        # Clear outputs for the next epoch
+        self.validation_step_outputs.clear()
 
         ## There are multiple ways to track the metrics
         # 1. Confusion matrix plotting using inbuilt W&B method
         self.logger.experiment.log(
             {
                 "conf": wandb.plot.confusion_matrix(
-                    probs=logits.numpy(), y_true=labels.numpy()
+                    probs=logits.cpu().numpy(), y_true=labels.cpu().numpy()
                 )
             }
         )
 
         # 2. Confusion Matrix plotting using scikit-learn method
-        # wandb.log({"cm": wandb.sklearn.plot_confusion_matrix(labels.numpy(), preds)})
+        wandb.log({"cm": wandb.sklearn.plot_confusion_matrix(labels.cpu().numpy(), preds.cpu().numpy())})
 
         # 3. Confusion Matric plotting using Seaborn
-        # data = confusion_matrix(labels.numpy(), preds.numpy())
-        # df_cm = pd.DataFrame(data, columns=np.unique(labels), index=np.unique(labels))
-        # df_cm.index.name = "Actual"
-        # df_cm.columns.name = "Predicted"
-        # plt.figure(figsize=(7, 4))
-        # plot = sns.heatmap(
-        #     df_cm, cmap="Blues", annot=True, annot_kws={"size": 16}
-        # )  # font size
-        # self.logger.experiment.log({"Confusion Matrix": wandb.Image(plot)})
+        data = confusion_matrix(labels.cpu().numpy(), preds.cpu().numpy())
+        df_cm = pd.DataFrame(data, columns=np.unique(labels.cpu()), index=np.unique(labels.cpu()))
+        df_cm.index.name = "Actual"
+        df_cm.columns.name = "Predicted"
+        plt.figure(figsize=(7, 4))
+        plot = sns.heatmap(
+            df_cm, cmap="Blues", annot=True, annot_kws={"size": 16}
+        )  # font size
+        self.logger.experiment.log({"Confusion Matrix": wandb.Image(plot)})
 
-        # self.logger.experiment.log(
-        #     {"roc": wandb.plot.roc_curve(labels.numpy(), logits.numpy())}
-        # )
+        self.logger.experiment.log(
+            {"roc": wandb.plot.roc_curve(labels.cpu().numpy(), logits.cpu().numpy())}
+        )
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.hparams["lr"])
