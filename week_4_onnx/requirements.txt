@@ -1,7 +1,7 @@
-pytorch-lightning==1.2.10
-datasets==1.6.2
-transformers==4.5.1
-scikit-learn==0.24.2
+pytorch-lightning==2.4.0
+datasets==3.0.0
+transformers==4.44.2
+scikit-learn==1.3.2
 wandb
 torchmetrics
 matplotlib
@@ -9,3 +9,4 @@ seaborn
 hydra-core
 omegaconf
 hydra_colorlog
+onnx==1.17.0
