@@ -82,13 +82,13 @@ Install the docker using the [instructions here](https://docs.docker.com/engine/
 Build the image using the command
 
 ```shell
-docker build -t inference:latest .
+docker build -t myinference:latest .
 ```
 
 Then run the container using the command
 
 ```shell
-docker run -p 8000:8000 --name inference_container inference:latest
+docker run -p 8000:8000 --name inference_container myinference:latest
 ```
 
 (or)
