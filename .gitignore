@@ -134,5 +134,7 @@ dmypy.json
 */outputs/*
 */multirun/*
 
+!*/models/*.dvc
+
 .DS_Store
 */.DS_Store
