@@ -17,5 +17,7 @@ jobs:
       run: |
           docker network create data
           docker build --tag inference:latest .
-          docker run -d -p 8000:8000 --network data --name inference_container inference:latest
+          docker run -d -p 8000:8000 --network data --name inference_container \
+          -v /media/sensetime/cbe421fe-1303-4821-9392-a849bfdd00e21/DVC_remote3:/mnt/dvc_remote \
+          inference:latest
       
