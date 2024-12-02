@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY . /app/
 
 # configuring remote server in dvc
-dvc remote add -d mylocalremote /media/sensetime/cbe421fe-1303-4821-9392-a849bfdd00e21/DVC_remote3
+RUN dvc remote add -d mylocalremote /media/sensetime/cbe421fe-1303-4821-9392-a849bfdd00e21/DVC_remote3
 
 RUN cat .dvc/config
 # pulling the trained model
