@@ -1,6 +1,8 @@
 [core]
-    remote = model-store
+    remote = mylocalremote
 ['remote "storage"']
     url = gdrive://19JK5AFbqOBlrFVwDHjTrf9uvQFtS0954
 ['remote "model-store"']
     url = s3://models-dvc/trained_models/
+['remote "mylocalremote"']
+    url = /media/sensetime/cbe421fe-1303-4821-9392-a849bfdd00e21/DVC_remote3
