@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY . /app/
 
 # Initialize DVC repository
-RUN dvc init
+RUN dvc init --no-scm
 
 # configuring remote server in dvc
 # RUN dvc remote add -d mylocalremote /media/sensetime/cbe421fe-1303-4821-9392-a849bfdd00e21/DVC_remote3
